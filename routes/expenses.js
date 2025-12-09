@@ -1,56 +1,67 @@
 const express = require('express');
 const router = express.Router();
-const { v4: uuidv4 } = require('uuid');
 const calculateDebts = require('../utils/expenseCalc');
-
-let participants = [];
-let expenses = [];
+const Participant = require('../models/participant');
+const Expense = require('../models/expense');
 
 // GET / - Dashboard
-router.get('/', (req, res) => {
-    res.render('expenses/index', { participants, expenses, pageTitle: 'Dashboard' });
+router.get('/', async (req, res) => {
+    const participants = await Participant.find({});
+    const expenses = await Expense.find({});
+    res.render('expenses/index', { participants: participants.map(p => p.name), expenses, pageTitle: 'Dashboard' });
 });
 
 // POST /participants - Add Participant
-router.post('/participants', (req, res) => {
+router.post('/participants', async (req, res) => {
     const { name } = req.body;
-    if (name && !participants.includes(name.trim())) {
-        participants.push(name.trim());
+    if (name) {
+        try {
+            const existing = await Participant.findOne({ name: name.trim() });
+            if (!existing) {
+                const participant = new Participant({ name: name.trim() });
+                await participant.save();
+            }
+        } catch (e) {
+            console.log(e);
+        }
     }
     res.redirect('/');
 });
 
 // POST /expenses - Add Expense
-router.post('/expenses', (req, res) => {
+router.post('/expenses', async (req, res) => {
     const { description, amount, payer } = req.body;
     if (description && amount && payer) {
-        expenses.push({
-            id: uuidv4(),
+        const expense = new Expense({
             description,
             amount: parseFloat(amount),
-            payer,
-            date: new Date()
+            payer
         });
+        await expense.save();
     }
     res.redirect('/');
 });
 
 // POST /expenses/delete/:id - Delete Expense
-router.post('/expenses/delete/:id', (req, res) => {
-    expenses = expenses.filter(e => e.id !== req.params.id);
+router.post('/expenses/delete/:id', async (req, res) => {
+    await Expense.findByIdAndDelete(req.params.id);
     res.redirect('/');
 });
 
 // GET /summary - View Plan
-router.get('/summary', (req, res) => {
+router.get('/summary', async (req, res) => {
+    const participantsDoc = await Participant.find({});
+    const expenses = await Expense.find({});
+    const participants = participantsDoc.map(p => p.name);
+
     const debts = calculateDebts(participants, expenses);
     res.render('expenses/summary', { debts, participants, expenses, pageTitle: 'Settlement Summary' });
 });
 
 // POST /reset - Clear data
-router.post('/reset', (req, res) => {
-    participants = [];
-    expenses = [];
+router.post('/reset', async (req, res) => {
+    await Participant.deleteMany({});
+    await Expense.deleteMany({});
     res.redirect('/');
 });
 

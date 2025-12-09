@@ -7,6 +7,16 @@ const expenseRoutes = require('./routes/expenses');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const mongoose = require('mongoose');
+
+const dbUrl = process.env.DB_URL || 'mongodb://127.0.0.1:27017/expense-splitter';
+mongoose.connect(dbUrl, {});
+
+const db = mongoose.connection;
+db.on("error", console.error.bind(console, "connection error:"));
+db.once("open", () => {
+    console.log("Database connected");
+});
 
 // View engine setup
 app.engine('ejs', require('ejs-mate'));
