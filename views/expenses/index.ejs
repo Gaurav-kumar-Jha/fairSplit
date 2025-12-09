@@ -58,14 +58,15 @@
                     <% if (expenses.length> 0) { %>
                         <% expenses.forEach(expense=> { %>
                             <li class="list-item">
-                                <div>
-                                    <strong>
+                                <div class="expense-info">
+                                    <div class="expense-title">
                                         <%= expense.description %>
-                                    </strong>
-                                    <div style="font-size: 0.9rem; color: #cbd5e1;">
+                                    </div>
+                                    <div class="expense-details">
                                         <span class="badge">
                                             <%= expense.payer %>
-                                        </span> paid $<%= expense.amount %>
+                                        </span>
+                                        <span>paid $<%= expense.amount %></span>
                                     </div>
                                 </div>
                                 <form action="/expenses/delete/<%= expense.id %>" method="POST" style="display:inline;">

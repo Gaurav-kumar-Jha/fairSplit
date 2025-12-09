@@ -6,7 +6,7 @@ const bodyParser = require('body-parser');
 const expenseRoutes = require('./routes/expenses');
 
 const app = express();
-const PORT = process.env.PORT
+const PORT = process.env.PORT || 3000;
 
 // View engine setup
 app.engine('ejs', require('ejs-mate'));
