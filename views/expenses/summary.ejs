@@ -1,0 +1,39 @@
+<% layout('layouts/boilerplate') %>
+
+    <h1 class="section-title">Settlement Summary</h1>
+
+    <div class="card glass">
+        <% if (debts.length> 0) { %>
+            <h2 style="text-align: center; margin-bottom: 2rem;">Who owes whom?</h2>
+            <div style="max-width: 600px; margin: 0 auto;">
+                <% debts.forEach(debt=> { %>
+                    <div class="summary-card">
+                        <div style="flex: 1; text-align: right; font-weight: 500;">
+                            <%= debt.from %>
+                        </div>
+                        <div class="transaction-arrow">
+                            <i class="fas fa-long-arrow-alt-right"></i>
+                            <div style="font-size: 0.8rem; color: #cbd5e1;">pays</div>
+                        </div>
+                        <div style="flex: 1; font-weight: 500;">
+                            <%= debt.to %>
+                        </div>
+                        <div class="amount">
+                            $<%= debt.amount %>
+                        </div>
+                    </div>
+                    <% }) %>
+            </div>
+            <% } else if (participants.length> 0 && expenses.length > 0) { %>
+                <div style="text-align: center; padding: 2rem;">
+                    <i class="fas fa-check-circle" style="font-size: 3rem; color: #4ade80; margin-bottom: 1rem;"></i>
+                    <h3>All settled up!</h3>
+                    <p>Everyone has paid their fair share.</p>
+                </div>
+                <% } else { %>
+                    <div style="text-align: center; padding: 2rem; color: #94a3b8;">
+                        <p>Add participants and expenses to see the settlement plan.</p>
+                        <a href="/" class="btn btn-primary" style="margin-top: 1rem;">Go to Dashboard</a>
+                    </div>
+                    <% } %>
+    </div>

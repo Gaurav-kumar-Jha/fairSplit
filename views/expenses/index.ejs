@@ -1,0 +1,91 @@
+<% layout('layouts/boilerplate') %>
+
+    <h1 class="section-title">Dashboard</h1>
+
+    <div class="grid-2">
+        <!-- Participants Section -->
+        <section>
+            <div class="card glass">
+                <h2>Participants</h2>
+                <form action="/participants" method="POST" class="form-group">
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" name="name" placeholder="Name (e.g., Alice)" required>
+                        <button class="btn btn-primary" type="submit"><i class="fas fa-plus"></i></button>
+                    </div>
+                </form>
+
+                <ul class="list-group">
+                    <% if (participants.length> 0) { %>
+                        <% participants.forEach(participant=> { %>
+                            <li class="list-item">
+                                <span><i class="fas fa-user-circle"></i>
+                                    <%= participant %>
+                                </span>
+                            </li>
+                            <% }) %>
+                                <% } else { %>
+                                    <li class="list-item" style="justify-content: center; color: #94a3b8;">
+                                        No participants yet.
+                                    </li>
+                                    <% } %>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Expenses Section -->
+        <section>
+            <div class="card glass">
+                <h2>Expenses</h2>
+                <form action="/expenses" method="POST" class="form-group">
+                    <div class="form-group">
+                        <input type="text" name="description" placeholder="Description (e.g., Dinner)" required>
+                    </div>
+                    <div class="grid-2" style="gap: 1rem; margin-bottom: 1rem;">
+                        <input type="number" name="amount" placeholder="Amount" step="0.01" min="0" required>
+                        <select name="payer" required>
+                            <option value="" disabled selected>Paid By</option>
+                            <% participants.forEach(p=> { %>
+                                <option value="<%= p %>">
+                                    <%= p %>
+                                </option>
+                                <% }) %>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" style="width: 100%;" type="submit">Add Expense</button>
+                </form>
+
+                <ul class="list-group">
+                    <% if (expenses.length> 0) { %>
+                        <% expenses.forEach(expense=> { %>
+                            <li class="list-item">
+                                <div>
+                                    <strong>
+                                        <%= expense.description %>
+                                    </strong>
+                                    <div style="font-size: 0.9rem; color: #cbd5e1;">
+                                        <span class="badge">
+                                            <%= expense.payer %>
+                                        </span> paid $<%= expense.amount %>
+                                    </div>
+                                </div>
+                                <form action="/expenses/delete/<%= expense.id %>" method="POST" style="display:inline;">
+                                    <button class="btn btn-danger"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </li>
+                            <% }) %>
+                                <% } else { %>
+                                    <li class="list-item" style="justify-content: center; color: #94a3b8;">
+                                        No expenses logged yet.
+                                    </li>
+                                    <% } %>
+                </ul>
+            </div>
+        </section>
+    </div>
+
+    <div style="margin-top: 2rem; text-align: center;">
+        <form action="/reset" method="POST" style="display: inline-block;">
+            <button class="btn btn-danger" onclick="return confirm('Are you sure you want to clear all data?');">Reset
+                All Data</button>
+        </form>
+    </div>
