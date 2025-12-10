@@ -12,8 +12,19 @@ const ExpenseSchema = new Schema({
         min: 0
     },
     payer: {
-        type: String, // Storing name for simplicity, could be ObjectId ref
+        type: Schema.Types.ObjectId,
+        ref: 'User',
         required: true
+    },
+    recipient: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+    status: {
+        type: String,
+        enum: ['pending', 'accepted', 'rejected'],
+        default: 'pending'
     },
     date: {
         type: Date,

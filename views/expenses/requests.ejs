@@ -1,0 +1,113 @@
+<% layout('layouts/boilerplate') %>
+
+    <h1 class="section-title">Expense Requests</h1>
+
+    <div class="card glass">
+        <!-- Tabs -->
+        <div style="display: flex; border-bottom: 1px solid var(--glass-border); margin-bottom: 1.5rem;">
+            <button class="tab-btn active" onclick="openTab(event, 'received')">Received Requests</button>
+            <button class="tab-btn" onclick="openTab(event, 'sent')">Sent Requests</button>
+        </div>
+
+        <!-- Received Tab -->
+        <div id="received" class="tab-content">
+            <% if (receivedRequests.length> 0) { %>
+                <ul class="list-group">
+                    <% receivedRequests.forEach(req=> { %>
+                        <li class="list-item">
+                            <div class="expense-info">
+                                <div class="expense-title">
+                                    <%= req.description %>
+                                </div>
+                                <div class="expense-details">
+                                    <span class="badge" style="background: rgba(99, 102, 241, 0.2); color: #a5b4fc;">
+                                        From: <%= req.payer.username %>
+                                    </span>
+                                    <span>$<%= req.amount %></span>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <form action="/expenses/<%= req._id %>/respond" method="POST">
+                                    <input type="hidden" name="status" value="accepted">
+                                    <button class="btn btn-primary"
+                                        style="padding: 0.5rem 1rem; font-size: 0.9rem;">Accept</button>
+                                </form>
+                                <form action="/expenses/<%= req._id %>/respond" method="POST">
+                                    <input type="hidden" name="status" value="rejected">
+                                    <button class="btn btn-danger"
+                                        style="padding: 0.5rem 1rem; font-size: 0.9rem;">Reject</button>
+                                </form>
+                            </div>
+                        </li>
+                        <% }) %>
+                </ul>
+                <% } else { %>
+                    <p style="text-align: center; color: #94a3b8; padding: 2rem;">No pending requests received.</p>
+                    <% } %>
+        </div>
+
+        <!-- Sent Tab -->
+        <div id="sent" class="tab-content" style="display: none;">
+            <% if (sentRequests.length> 0) { %>
+                <ul class="list-group">
+                    <% sentRequests.forEach(req=> { %>
+                        <li class="list-item">
+                            <div class="expense-info">
+                                <div class="expense-title">
+                                    <%= req.description %>
+                                </div>
+                                <div class="expense-details">
+                                    <span class="badge" style="background: rgba(236, 72, 153, 0.2); color: #fbcfe8;">
+                                        To: <%= req.recipient.username %>
+                                    </span>
+                                    <span>$<%= req.amount %></span>
+                                    <span style="font-style: italic; margin-left: 0.5rem;">(<%= req.status %>)</span>
+                                </div>
+                            </div>
+                        </li>
+                        <% }) %>
+                </ul>
+                <% } else { %>
+                    <p style="text-align: center; color: #94a3b8; padding: 2rem;">No pending requests sent.</p>
+                    <% } %>
+        </div>
+    </div>
+
+    <style>
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 1rem 2rem;
+            color: #94a3b8;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-color);
+        }
+
+        .tab-btn.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+    </style>
+
+    <script>
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tab-btn");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+    </script>

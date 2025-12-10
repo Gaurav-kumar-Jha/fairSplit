@@ -1,69 +1,56 @@
-function calculateDebts(participants, expenses) {
-    if (participants.length === 0) return [];
-
+function calculateDebts(expenses) {
     let balances = {};
-    participants.forEach(p => balances[p] = 0);
 
+    // 1. Calculate Net Balances
     expenses.forEach(exp => {
+        const payer = exp.payer.username;
+        const recipient = exp.recipient.username;
         const amount = parseFloat(exp.amount);
-        const payer = exp.payer;
-        const splitAmount = amount / participants.length;
 
-        // Payer paid the full amount, so they are "up" by that amount initially
-        // But we subtract the fair share from everyone including the payer
-        // Net change for payer = +Amount - (Amount/N)
-        // Net change for others = -(Amount/N)
+        if (!balances[payer]) balances[payer] = 0;
+        if (!balances[recipient]) balances[recipient] = 0;
 
-        // Let's stick to simple ledger:
-        // Credit the payer
-        if (balances[payer] !== undefined) {
-            balances[payer] += amount;
-        }
-
-        // Debit everyone their share
-        participants.forEach(p => {
-            balances[p] -= splitAmount;
-        });
+        balances[payer] += amount;      // Payer gets money back (positive balance)
+        balances[recipient] -= amount;  // Recipient owes money (negative balance)
     });
 
-    // Separate into debtors and creditors
+    // 2. Separate into Debtors and Creditors
     let debtors = [];
     let creditors = [];
 
     for (const [person, amount] of Object.entries(balances)) {
-        // Round to 2 decimals to avoid floating point issues
-        let net = Math.round(amount * 100) / 100;
-        if (net < -0.01) debtors.push({ person, amount: net }); // amount is negative
-        if (net > 0.01) creditors.push({ person, amount: net });  // amount is positive
+        let net = Math.round(amount * 100) / 100; // Round to 2 decimals
+        if (net < -0.01) debtors.push({ person, amount: net });
+        if (net > 0.01) creditors.push({ person, amount: net });
     }
 
-    // Sort by magnitude to minimize transactions (heuristic)
+    // Sort by magnitude to optimize matching
     debtors.sort((a, b) => a.amount - b.amount); // Ascending (most negative first)
     creditors.sort((a, b) => b.amount - a.amount); // Descending (most positive first)
 
+    // 3. Match Debtors to Creditors
     let debts = [];
-    let i = 0; // debtors index
-    let j = 0; // creditors index
+    let i = 0;
+    let j = 0;
 
     while (i < debtors.length && j < creditors.length) {
         let debtor = debtors[i];
         let creditor = creditors[j];
 
-        // The amount to be settled is the minimum of magnitude of debt or credit
+        // The amount to settle is the minimum of what the debtor owes and what the creditor is owed
         let amount = Math.min(Math.abs(debtor.amount), creditor.amount);
 
-        // Record the transaction
         debts.push({
             from: debtor.person,
             to: creditor.person,
             amount: amount.toFixed(2)
         });
 
-        // Update remaining balances
+        // Update balances
         debtor.amount += amount;
         creditor.amount -= amount;
 
-        // Check if settled (close to 0)
+        // Move pointers if settled (approximate zero check)
         if (Math.abs(debtor.amount) < 0.01) i++;
         if (creditor.amount < 0.01) j++;
     }

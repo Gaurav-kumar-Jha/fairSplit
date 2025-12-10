@@ -1,15 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= typeof pageTitle !== 'undefined' ? pageTitle : 'Expense Splitter' %></title>
+    <title>
+        <%= typeof pageTitle !=='undefined' ? pageTitle : 'Expense Splitter' %>
+    </title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
 </head>
+
 <body>
     <div class="background-blobs">
         <div class="blob blob-1"></div>
@@ -21,8 +25,18 @@
         <div class="container nav-container">
             <a href="/" class="logo"><i class="fas fa-wallet"></i> FairSplit</a>
             <div class="nav-links">
-                <a href="/" class="<%= typeof pageTitle !== 'undefined' && pageTitle === 'Dashboard' ? 'active' : '' %>">Dashboard</a>
-                <a href="/summary" class="<%= typeof pageTitle !== 'undefined' && pageTitle === 'Settlement Summary' ? 'active' : '' %>">Summary</a>
+                <% if (!currentUser) { %>
+                    <a href="/login">Login</a>
+                    <a href="/register">Register</a>
+                    <% } else { %>
+                        <a href="/"
+                            class="<%= typeof pageTitle !== 'undefined' && pageTitle === 'Dashboard' ? 'active' : '' %>">Dashboard</a>
+                        <a href="/requests"
+                            class="<%= typeof pageTitle !== 'undefined' && pageTitle === 'Requests' ? 'active' : '' %>">Requests</a>
+                        <a href="/summary"
+                            class="<%= typeof pageTitle !== 'undefined' && pageTitle === 'Settlement Summary' ? 'active' : '' %>">Summary</a>
+                        <a href="/logout">Logout (<%= currentUser.username %>)</a>
+                        <% } %>
             </div>
         </div>
     </nav>
@@ -35,4 +49,5 @@
         <p>&copy; 2024 FairSplit Expense Manager</p>
     </footer>
 </body>
+
 </html>

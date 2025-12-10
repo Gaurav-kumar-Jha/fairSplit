@@ -1,68 +1,105 @@
 const express = require('express');
 const router = express.Router();
-const calculateDebts = require('../utils/expenseCalc');
-const Participant = require('../models/participant');
 const Expense = require('../models/expense');
+const User = require('../models/user');
+const calculateDebts = require('../utils/expenseCalc');
+const { isLoggedIn } = require('../middleware');
 
 // GET / - Dashboard
-router.get('/', async (req, res) => {
-    const participants = await Participant.find({});
-    const expenses = await Expense.find({});
-    res.render('expenses/index', { participants: participants.map(p => p.name), expenses, pageTitle: 'Dashboard' });
+router.get('/', isLoggedIn, async (req, res) => {
+    const expenses = await Expense.find({
+        $or: [
+            { payer: req.user._id },
+            { recipient: req.user._id, status: 'accepted' }
+        ]
+    }).populate('payer recipient');
+
+    res.render('expenses/index', { expenses, pageTitle: 'Dashboard' });
 });
 
-// POST /participants - Add Participant
-router.post('/participants', async (req, res) => {
-    const { name } = req.body;
-    if (name) {
-        try {
-            const existing = await Participant.findOne({ name: name.trim() });
-            if (!existing) {
-                const participant = new Participant({ name: name.trim() });
-                await participant.save();
-            }
-        } catch (e) {
-            console.log(e);
-        }
+// GET /requests - View Requests
+router.get('/requests', isLoggedIn, async (req, res) => {
+    const receivedRequests = await Expense.find({
+        recipient: req.user._id,
+        status: 'pending'
+    }).populate('payer');
+
+    const sentRequests = await Expense.find({
+        payer: req.user._id,
+        status: 'pending'
+    }).populate('recipient');
+
+    res.render('expenses/requests', { receivedRequests, sentRequests, pageTitle: 'Requests' });
+});
+
+// POST /expenses - Add Expense (Request)
+router.post('/expenses', isLoggedIn, async (req, res) => {
+    const { description, amount, username } = req.body;
+
+    // Find recipient by username
+    const recipientUser = await User.findOne({ username: username.trim() });
+
+    if (!recipientUser) {
+        // Handle error: User not found (Quick fix: just redirect for now)
+        // Ideally flash message
+        console.log("User not found");
+        return res.redirect('/');
     }
-    res.redirect('/');
-});
 
-// POST /expenses - Add Expense
-router.post('/expenses', async (req, res) => {
-    const { description, amount, payer } = req.body;
-    if (description && amount && payer) {
+    if (recipientUser._id.equals(req.user._id)) {
+        console.log("Cannot add yourself");
+        return res.redirect('/');
+    }
+
+    if (description && amount) {
         const expense = new Expense({
             description,
             amount: parseFloat(amount),
-            payer
+            payer: req.user._id,
+            recipient: recipientUser._id,
+            status: 'pending'
         });
         await expense.save();
     }
+    res.redirect('/requests'); // Redirect to requests to see sent items
+});
+
+// POST /expenses/:id/respond - Accept/Reject
+router.post('/expenses/:id/respond', isLoggedIn, async (req, res) => {
+    const { status } = req.body; // accepted or rejected
+
+    // Security: ensure current user is recipient
+    const targetExpense = await Expense.findOne({ _id: req.params.id, recipient: req.user._id });
+
+    if (targetExpense && ['accepted', 'rejected'].includes(status)) {
+        targetExpense.status = status;
+        await targetExpense.save();
+    }
+    res.redirect('/requests');
+});
+
+// POST /expenses/delete/:id - Delete Expense (Only Payer can delete?)
+router.post('/expenses/delete/:id', isLoggedIn, async (req, res) => {
+    await Expense.findOneAndDelete({ _id: req.params.id, payer: req.user._id });
     res.redirect('/');
 });
 
-// POST /expenses/delete/:id - Delete Expense
-router.post('/expenses/delete/:id', async (req, res) => {
-    await Expense.findByIdAndDelete(req.params.id);
-    res.redirect('/');
-});
 
 // GET /summary - View Plan
-router.get('/summary', async (req, res) => {
-    const participantsDoc = await Participant.find({});
-    const expenses = await Expense.find({});
-    const participants = participantsDoc.map(p => p.name);
+router.get('/summary', isLoggedIn, async (req, res) => {
+    // Fetch all ACCEPTED expenses involving me
+    const expenses = await Expense.find({
+        $or: [
+            { payer: req.user._id, status: 'accepted' },
+            { recipient: req.user._id, status: 'accepted' }
+        ]
+    }).populate('payer recipient');
 
-    const debts = calculateDebts(participants, expenses);
-    res.render('expenses/summary', { debts, participants, expenses, pageTitle: 'Settlement Summary' });
-});
+    // Calculate debts using the utility for net settlement
+    const debts = calculateDebts(expenses);
 
-// POST /reset - Clear data
-router.post('/reset', async (req, res) => {
-    await Participant.deleteMany({});
-    await Expense.deleteMany({});
-    res.redirect('/');
+    res.render('expenses/summary', { debts, hasExpenses: expenses.length > 0, pageTitle: 'Settlement Summary' });
 });
 
 module.exports = router;
+
